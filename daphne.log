@@ -1,0 +1,14 @@
+nohup: ignoring input
+2025-05-14 03:27:17,859 INFO     libssl detected, it will be used for encryption
+2025-05-14 03:27:18,271 INFO     Starting server at tcp:port=8000:interface=127.0.0.1
+2025-05-14 03:27:18,272 INFO     HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+2025-05-14 03:27:18,272 INFO     Configuring endpoint tcp:port=8000:interface=127.0.0.1
+2025-05-14 03:27:18,273 INFO     Listening on TCP address 127.0.0.1:8000
+Not Found: /favicon.ico
+2025-05-14 03:28:48,251 WARNING  Not Found: /favicon.ico
+2025-05-14 03:29:27,297 INFO     Killed 0 pending application instances
+127.0.0.1:56452 - - [14/May/2025:03:28:47] "GET /" 200 2082
+127.0.0.1:56452 - - [14/May/2025:03:28:48] "GET /favicon.ico" 404 4910
+127.0.0.1:56452 - - [14/May/2025:03:28:52] "GET /" 200 2082
+127.0.0.1:56452 - - [14/May/2025:03:28:53] "GET /" 200 2082
+127.0.0.1:56452 - - [14/May/2025:03:28:53] "GET /" 200 2082

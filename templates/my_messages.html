@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mening xabarlarim</title>
+</head>
+<body>
+    <style>
+        .reload-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .reload-btn:hover {
+            background-color: #45a049;
+        }
+
+        .reload-btn:active {
+            background-color: #3e8e41;
+        }
+    </style>
+    <h2>📬 Siz olgan xabarlar</h2>
+    <a href="{% url 'show_last_message' %}"><button class="reload-btn" >Ortga</button></a>
+    {% for msg in messages %}
+        <div>
+            📩 {{ msg.text }}<br>
+            <i>Olingan: {{ msg.taken_by }}</i>
+        </div>
+        <hr>
+    {% empty %}
+        <p>Hozircha sizda xabarlar yo‘q.</p>
+    {% endfor %}
+</body>
+</html>

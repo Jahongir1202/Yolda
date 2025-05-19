@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mening xabarlarim</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+
+        .main-wrapper {
+            display: flex;
+            flex-direction: column; /* Ekranning yuqori va pastki qismlari vertikal joylashadi */
+            height: 100vh; /* Ekran balandligiga teng */
+            justify-content: space-between;
+        }
+
+        .container {
+            flex: 1; /* Har bir bo'limga teng joy ajratish */
+            overflow-y: auto; /* Agar ko'p habar bo'lsa, scroll qilinadi */
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            max-height: 100%;
+            box-sizing: border-box;
+        }
+
+        .message {
+            background-color: #f9f9f9;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        /* Habarlarni o'chirish tugmasi */
+        .btn {
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .message {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            background-color: #fefefe;
+        }
+
+        .btn {
+            padding: 6px 10px;
+            margin-right: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .edit-btn {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .delete-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .send-btn {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none; /* Start as hidden */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black with transparency */
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 70%; /* Enini 70% ga o'zgartirildi */
+            height: 70%; /* Bo'yini 70% ga o'zgartirildi */
+            overflow-y: auto; /* Agar xabar uzun bo'lsa, o'qi bo'lishi uchun skroll bar qo'yiladi */
+        }
+
+        /* Media queries uchun o'zgartirishlar */
+        @media screen and (max-width: 768px) {
+            .main-wrapper {
+                flex-direction: column; /* Kichik ekranlar uchun bo'limlarni vertikal joylashuv */
+            }
+
+            .container {
+                min-width: 100%;
+                margin-bottom: 20px;
+            }
+
+            /* Habarlarni scroll qilinadigan qilish */
+            .message {
+                max-height: 300px;
+                overflow-y: auto;
+            }
+
+            /* Kichik ekranlar uchun sarlavha o'lchamini kamaytirish */
+            h1 {
+                font-size: 1.5em;
+            }
+
+            /* Mobil uchun tugmalarni kichraytirish */
+            .btn {
+                font-size: 0.8em;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            /* Juda kichik ekranlar uchun sozlamalar */
+            h1 {
+                font-size: 1.2em;
+            }
+
+            .btn {
+                padding: 4px 8px;
+                font-size: 0.7em;
+            }
+
+            .container {
+                padding: 10px;
+            }
+
+            .message {
+                padding: 10px;
+            }
+        }
+        .reload-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .reload-btn:hover {
+            background-color: #45a049;
+        }
+
+        .reload-btn:active {
+            background-color: #3e8e41;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+        <div class="container">
+            <h1>YANGI ELONLAR</h1>     <button id="reloadPage" class="reload-btn">🔄 Sahifani yangilash</button>
+
+            <div id="messages">
+                {% for msg in messages %}
+                    {% if not msg.taken_by or msg.taken_by.id == request.session.user_id %}
+                        <div class="message" id="msg-{{ msg.id }}">
+                            📩 {{ msg.text }}
+                            {% if not msg.taken_by %}
+                                <button id="reload_message" onclick="takeMessage({{ msg.id }}, this)">Olindi ✅</button>
+                            {% else %}
+                                <b>(Olingan: {{ msg.taken_by.username }})</b>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="container">
+            <h1 id="myelon">Mening e'lonlarim</h1>
+            {% for msg in messages %}
+                {% if msg.taken_by and msg.taken_by.id == request.session.user_id %}
+                    <div class="message" id="my-msg-{{ msg.id }}" onclick="openMessageModal({{ msg.id }})">
+                        <form method="POST" action="{% url 'edit_message' msg.id %}">
+                            {% csrf_token %}
+                            <textarea name="text" rows="3" style="width: 100%;">{{ msg.text }}</textarea><br>
+                            <a href="{% url 'delete_message' msg.id %}">
+                                <button id="reload_ochirish" type="button" class="btn delete-btn">🗑️ O‘chirish</button>
+                            </a>
+                        </form>
+                    </div>
+                {% endif %}
+            {% empty %}
+                <p>🚫 Sizda hozircha olingan xabarlar yo‘q.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="message-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeMessageModal()">&times;</span>
+            <textarea id="modal-text" rows="3" style="width: 100%;height:80%"></textarea><br>
+            <button class="btn send-btn" onclick="sendMessageToGroupsModal()">📤 Yuborish</button>
+            <button id="editMessageModal" class="btn edit-btn" onclick="editMessageModal()">✏️ Tahrirlash</button>
+        </div>
+    </div>
+    <script>
+        document.getElementById('reloadPage').addEventListener('click', function() {
+            location.reload();
+        });
+        // WebSocketni serverga ulash
+        const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        const socket = new WebSocket(`${protocol}://${window.location.host}/ws/messages/`);
+        document.getElementById('editMessageModal').addEventListener('click', function() {
+            location.reload();
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+        const reloadOchirish = document.getElementById('reload_ochirish');
+        const reloadMessage = document.getElementById('reload_message');
+
+        if (reloadOchirish) {
+            reloadOchirish.addEventListener('click', function () {
+                location.reload();
+            });
+        }
+
+        if (reloadMessage) {
+            reloadMessage.addEventListener('click', function () {
+                location.reload();
+            });
+        }
+    });
+
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+
+            if (data.type === 'message') {
+                // Yangi xabarni qo‘shish
+                const messageList = document.getElementById("messages");
+                const li = document.createElement("div");
+                li.classList.add("message");
+                li.id = `msg-${data.id}`;
+                li.innerHTML = `📩 ${data.message}`;
+
+                // Olindi tugmasi va boshqa elementlarni qo‘shish
+                if (!data.taken_by) {
+                    li.innerHTML += `<button onclick="takeMessage(${data.id}, this)">Olindi ✅</button>`;
+                } else {
+                    li.innerHTML += `<b>(Olingan: ${data.taken_by})</b>`;
+                }
+
+                li.innerHTML += `<button onclick="deleteMessage(${data.id})" class="btn delete-btn">🗑️ O‘chirish</button>`;
+                messageList.prepend(li); // Yangi xabarni boshiga qo‘shish
+            } else if (data.type === 'delete') {
+                // Xabarni o‘chirish
+                const elem = document.getElementById(`msg-${data.id}`);
+                if (elem) elem.remove();
+            } else if (data.type === 'taken') {
+                const elem = document.getElementById(`msg-${data.id}`);
+                if (elem) {
+                    elem.innerHTML = `📩 ${data.message} <b>(Olingan: ${data.taken_by})</b>`;
+                    elem.innerHTML += `<button onclick="deleteMessage(${data.id})" class="btn delete-btn">🗑️ O‘chirish</button>`;
+                }
+            }
+        };
+
+        function takeMessage(id, button) {
+            socket.send(JSON.stringify({
+                action: 'take',
+                id: id
+            }));
+        }
+
+        // CSRF token olish
+        function getCookie(name) {
+    let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Cookie nomini topish
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+
+        const csrftoken = getCookie('csrftoken');
+
+                // Modalni ochish
+        function openMessageModal(messageId) {
+            // Xabarni olish
+            const messageDiv = document.getElementById(`my-msg-${messageId}`);
+            const modal = document.getElementById("message-modal");
+            const modalText = document.getElementById("modal-text");
+
+            // Xabar matnini modalga joylash
+            modalText.value = messageDiv.querySelector("textarea").value;
+
+            // Modalni ko'rsatish
+            modal.style.display = "block";
+
+            // Modalni yopish uchun tugmani o'zgartirish
+            modal.dataset.messageId = messageId;
+        }
+
+        // Modalni yopish
+        function closeMessageModal() {
+            const modal = document.getElementById("message-modal");
+            modal.style.display = "none";
+        }
+
+        // Modalda yuborish
+        function sendMessageToGroupsModal() {
+            const modal = document.getElementById("message-modal");
+            const messageId = modal.dataset.messageId;
+            const messageText = document.getElementById("modal-text").value;
+
+            console.log("Yuborilayotgan xabar (modal):", messageText);
+
+            if (!messageText || !messageText.trim()) {
+                console.error("Xabar bo'sh!");
+                return;
+            }
+
+            fetch(`/send_to_groups/${messageId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({
+                    message: messageText
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Xabar jo'natildi:", data);
+                    socket.send(JSON.stringify({
+                        type: 'message',
+                        id: data.id,
+                        message: data.message
+                    }));
+                } else {
+                    console.error("Serverdan xatolik:", data.error);
+                }
+            })
+            .catch(err => {
+                console.error("Fetch xatolik:", err);
+            });
+        }
+
+        // Modalda tahrirlash
+        function editMessageModal() {
+            const modal = document.getElementById("message-modal");
+            const messageId = modal.dataset.messageId;
+            const messageText = document.getElementById("modal-text").value;
+
+            fetch(`/edit_message/${messageId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({
+                    text: messageText
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    console.log("Xabar tahrirlandi:", data);
+                    closeMessageModal();
+                } else {
+                    console.error("Xabar tahrirlanmadi:", data.error);
+                }
+            })
+            .catch(err => {
+                console.error("Xatolik:", err);
+            });
+        }
+
+        // Modalda o'chirish
+        function deleteMessageModal() {
+            const modal = document.getElementById("message-modal");
+            const messageId = modal.dataset.messageId;
+
+            fetch(`/delete_message/${messageId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    console.log("Xabar o'chirildi:", data);
+                    closeMessageModal();
+                    const elem = document.getElementById(`msg-${messageId}`);
+                    if (elem) elem.remove();
+                } else {
+                    console.error("Xabar o'chirilmagan:", data.error);
+                }
+            })
+            .catch(err => {
+                console.error("Xatolik:", err);
+            });
+        }
+
+
+    </script>
+</body>
+</html>

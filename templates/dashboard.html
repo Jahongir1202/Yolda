@@ -1,0 +1,32 @@
+<!-- templates/dashboard.html -->
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+</head>
+<body>
+    <h2>Assalomu alaykum, {{ request.user.username }}</h2>
+    <a href="{% url 'logout' %}">Chiqish</a>
+
+    <h3>Olingan xabarlar:</h3>
+    <ul>
+        {% for msg in messages %}
+            <li><strong>{{ msg.claimed_at }}</strong>: {{ msg.text }}</li>
+        {% empty %}
+            <li>Hozircha xabar yo‘q.</li>
+        {% endfor %}
+    </ul>
+    <h1>Dispatcher Dashboard</h1>
+    <ul>
+        {% for message in messages %}
+            <li>{{ message.text }} - {{ message.claimed_at }}
+                {% if not message.claimed_by %}
+                    <a href="{% url 'claim_message' message.id %}">Claim</a>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+
+</body>
+</html>

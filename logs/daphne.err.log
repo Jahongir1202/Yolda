@@ -1,0 +1,20 @@
+2025-05-18 09:36:29,877 INFO     libssl detected, it will be used for encryption
+2025-05-18 09:36:30,242 INFO     Starting server at tcp:port=8000:interface=0.0.0.0
+2025-05-18 09:36:30,243 INFO     HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+2025-05-18 09:36:30,243 INFO     Configuring endpoint tcp:port=8000:interface=0.0.0.0
+2025-05-18 09:36:30,244 INFO     Listening on TCP address 0.0.0.0:8000
+Not Found: /favicon.ico
+2025-05-18 09:36:45,099 WARNING  Not Found: /favicon.ico
+2025-05-18 09:37:02,856 INFO     Connecting to 149.154.167.51:443/TcpFull...
+2025-05-18 09:37:02,977 INFO     Connection to 149.154.167.51:443/TcpFull complete!
+2025-05-18 09:37:04,427 INFO     Disconnecting from 149.154.167.51:443/TcpFull...
+2025-05-18 09:37:04,429 INFO     Disconnection from 149.154.167.51:443/TcpFull complete!
+2025-05-18 09:41:05,713 INFO     Killed 0 pending application instances
+supervisor: couldn't chdir to /YukYolda: ENOENT
+supervisor: child process was not spawned
+supervisor: couldn't chdir to /YukYolda: ENOENT
+supervisor: child process was not spawned
+supervisor: couldn't chdir to /YukYolda: ENOENT
+supervisor: child process was not spawned
+supervisor: couldn't chdir to /YukYolda: ENOENT
+supervisor: child process was not spawned
