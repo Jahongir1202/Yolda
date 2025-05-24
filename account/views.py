@@ -5,7 +5,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from .models import User, MessageUser, TelegramAccount, Message
 import json
-
+from .tasks import delete_message
+from datetime import timedelta
 @csrf_exempt
 def send_to_groups(request, msg_id):
     if request.method == 'POST':
@@ -111,3 +112,5 @@ def take_message(request, id):
         except MessageUser.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Xabar topilmadi'})
     return JsonResponse({'success': False, 'error': 'Faqat POST so‘rovga ruxsat'})
+
+
