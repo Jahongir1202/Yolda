@@ -1,7 +1,7 @@
 # admin.py
 from django.utils.html import mark_safe
 from django.contrib import admin
-from .models import TelegramAccount, Message, User
+from .models import TelegramAccount, Message, User, ArxivMessage
 
 # admin.py
 from .models import TelegramGroup
@@ -34,3 +34,9 @@ class MessageUserAdmin(admin.ModelAdmin):
     list_display = ('text', 'taken_by', 'created_at')
     list_filter = ('taken_by',)
 admin.site.register(MessageUser, MessageUserAdmin)
+
+
+@admin.register(ArxivMessage)
+class ArxivMessageAdmin(admin.ModelAdmin):
+    list_display = ('qayerda', 'qayerga', 'cars', 'narxi')
+    search_fields = ('cars', 'qayerda', 'qayerga')

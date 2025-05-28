@@ -1,5 +1,6 @@
 from django import forms
-from .models import TelegramGroup
+from .models import TelegramGroup, ArxivMessage
+
 
 class SendMessageForm(forms.Form):
     message = forms.CharField(widget=forms.Textarea(attrs={'rows': 4, 'cols': 40}), label='Xabar')

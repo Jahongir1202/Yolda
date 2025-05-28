@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mening e'lonlarim</title>
+    <link rel="stylesheet" href="../media/main.css" />
+    <script defer src="../media/index.js"></script>
+</head>
+<body>
+    <div class="main-wrapper">
+        <div class="container">
+            <h1>Mening e'lonlarim</h1>
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="message" id="my-msg-{{ msg.id }}" onclick="openMessageModal({{ msg.id }})">
+                        <form method="POST" action="{% url 'edit_message' msg.id %}" class="edit-message-form" data-msg-id="{{ msg.id }}">
+                            {% csrf_token %}
+                            <textarea name="text" rows="3" style="width: 100%;">{{ msg.text }}</textarea><br>
+                            <a href="{% url 'delete_message' msg.id %}">
+                                <button type="button" class="btn delete-btn">🗑️ O‘chirish</button>
+                            </a>
+                        </form>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>🚫 Sizda hozircha olingan xabarlar yo‘q.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="message-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeMessageModal()">&times;</span>
+            <textarea id="modal-text" rows="3" style="width: 100%; height: 80%;"></textarea><br />
+            <button class="btn send-btn" onclick="sendMessageToGroupsModal()">📤 Yuborish</button>
+            <button id="editMessageModal" class="btn edit-btn" onclick="editMessageModal()">✏️ Tahrirlash</button>
+        </div>
+    </div>
+</body>
+</html>

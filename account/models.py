@@ -118,3 +118,12 @@ class MessageUser(models.Model):
         except ObjectDoesNotExist:
             raise IntegrityError("Foydalanuvchi mavjud emas!")
 
+class ArxivMessage(models.Model):
+    qayerda = models.CharField(max_length=100)
+    qayerga = models.CharField(max_length=100)
+    cars = models.CharField(max_length=100)
+    text = models.CharField(max_length=500)
+    narxi = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.cars

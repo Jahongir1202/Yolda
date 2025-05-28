@@ -9,6 +9,7 @@ urlpatterns = [
     path('', login_view, name='login'),
     path('logout/', logout_view, name='logout'),
     path('my-messages/', views.my_messages_view, name='my_messages'),
+    path('my-list/', views.my_messages_view, name='my_list'),
     path('edit_message/<int:msg_id>/', views.edit_message, name='edit_message'),
     path('delete-message/<int:msg_id>/', views.delete_message, name='delete_message'),
     path('send_to_groups/<int:msg_id>/', views.send_to_groups, name='send_to_groups'),
