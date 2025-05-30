@@ -36,21 +36,26 @@ socket.onmessage = function(event) {
     const data = JSON.parse(event.data);
 
     if (data.type === 'message') {
-        // Yangi xabarni qo‘shish
         const messageList = document.getElementById("messages");
         const li = document.createElement("div");
         li.classList.add("message");
         li.id = `msg-${data.id}`;
-        li.innerHTML = `📩 ${data.message}`;
+        li.innerHTML = `${data.message}`;
 
-        // Olindi tugmasi va boshqa elementlarni qo‘shish
         if (!data.taken_by) {
-            li.innerHTML += `<button onclick="takeMessage(${data.id}, this)">Olindi ✅</button>`;
+            li.innerHTML += `<button class="reload_message" onclick="takeMessage(${data.id}, this)">
+                                Olindi <i class="fa-solid fa-check"></i>
+                             </button>`;
         } else {
             li.innerHTML += `<b>(Olingan: ${data.taken_by})</b>`;
         }
 
-        messageList.prepend(li); // Yangi xabarni boshiga qo‘shish
+        messageList.prepend(li);
+
+        // FontAwesome ikonlarni yangilash
+        if (window.FontAwesome && window.FontAwesome.dom) {
+            window.FontAwesome.dom.i2svg();
+        }
     } else if (data.type === 'delete') {
         // Xabarni o‘chirish
         const elem = document.getElementById(`msg-${data.id}`);
@@ -58,7 +63,7 @@ socket.onmessage = function(event) {
     } else if (data.type === 'taken') {
         const elem = document.getElementById(`msg-${data.id}`);
         if (elem) {
-            elem.innerHTML = `📩 ${data.message} <b>(Olingan: ${data.taken_by})</b>`;
+            elem.innerHTML = ` ${data.message} <b>(Olingan: ${data.taken_by})</b>`;
             elem.innerHTML += `<button onclick="deleteMessage(${data.id})" class="btn delete-btn">🗑️ O‘chirish</button>`;
         }
     }

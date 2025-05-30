@@ -20,10 +20,10 @@
             <div style="background-color: #1e2a47; border: 1px solid white; border-radius: 5px;" id="messages">
                 {% for msg in messages %}
                     {% if not msg.taken_by or msg.taken_by.id == request.session.user_id %}
-                        <div style="background-color: #1e2a49; color: white;" class="message" id="msg-{{ msg.id }}">
+                        <div  class="message" id="msg-{{ msg.id }}">
                             <i class="fa-solid fa-envelope"></i> {{ msg.text }}
                             {% if not msg.taken_by %}
-                                <button id="reload_message" onclick="takeMessage({{ msg.id }}, this)">Olindi <i class="fa-solid fa-check"></i></button>
+                                <button class="reload_message" id="reload_message" onclick="takeMessage({{ msg.id }}, this)">Olindi <i class="fa-solid fa-check"></i></button>
                             {% else %}
                                 <b>(Olingan: {{ msg.taken_by.username }})</b>
                             {% endif %}

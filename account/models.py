@@ -21,6 +21,7 @@ class TelegramAccount(models.Model):
     phone_number = models.CharField(max_length=15, unique=True)
     session_name = models.CharField(max_length=255, unique=True)
     qr_code = models.ImageField(upload_to='qrcodes/', blank=True, null=True)
+    last_group_index = models.IntegerField(default=0)
     is_logged_in = models.BooleanField(default=False)
     is_default = models.BooleanField(default=False)
 
@@ -37,17 +38,25 @@ class TelegramAccount(models.Model):
 
             if not await client.is_user_authorized():
                 qr_login = await client.qr_login()
-                qr_data = qr_login.url
+                qr_url = qr_login.url  # Faqat URL qismi olinadi
 
-                qr = qrcode.make(qr_data)
+                import qrcode
+                from io import BytesIO
+                from django.core.files.base import ContentFile
+
+                qr_img = qrcode.make(qr_url)
                 buffer = BytesIO()
-                qr.save(buffer, format="PNG")
-                self.qr_code.save(f'{self.session_name}_qr.png', ContentFile(buffer.getvalue()), save=False)
+                qr_img.save(buffer, format="PNG")
+                buffer.seek(0)
+
+                file_name = f'{self.session_name}_qr.png'
+                self.qr_code.save(file_name, ContentFile(buffer.read()), save=False)
 
             await client.disconnect()
 
         loop.run_until_complete(generate_qr())
         super().save(*args, **kwargs)
+
 
     async def async_send_message_to_groups(self, message_text):
         client = TelegramClient(self.session_name, API_ID, API_HASH)

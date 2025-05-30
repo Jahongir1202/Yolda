@@ -2,7 +2,6 @@ body {
     font-family: sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f5f5f5;
 }
 
 .main-wrapper {
@@ -16,7 +15,6 @@ nav{
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border: 2px solid red; 
 }
 
 .reload-btn{
@@ -25,9 +23,6 @@ nav{
     font-size: 18px;
 }
 
-.dalete_bar{
-    border:  2px solid red;
-}
 
 
 .container {
@@ -40,13 +35,7 @@ nav{
     box-sizing: border-box;
 }
 
-.message {
-    background-color: #f9f9f9;
-    margin-bottom: 10px;
-    padding: 10px;
-    border-radius: 5px;
-    border: 1px solid #ddd;
-}
+
 
 .message i{
     color: #3498db;
@@ -54,7 +43,7 @@ nav{
 }
 
 
-#reload_message{
+.reload_message{
     background-color: #2ecc71;
     border: none;
     border-radius: 10px;
@@ -63,7 +52,7 @@ nav{
     color: white;
 }
 
-#reload_message i{
+.reload_message i{
     color: white;
 }
 
@@ -79,11 +68,12 @@ h1 {
     color: #333;
 }
 .message {
+    background-color: #1e2a49; 
+    color: white;
     border: 1px solid #ddd;
     padding: 15px;
     margin-bottom: 15px;
     border-radius: 8px;
-    background-color: #fefefe;
 }
 
 .btn {
@@ -110,28 +100,96 @@ h1 {
 }
 
 /* Modal styles */
+/* Modal asosiy fon */
 .modal {
-    display: none; /* Start as hidden */
+    display: none; /* JavaScript orqali ko‘rsatiladi */
     position: fixed;
-    z-index: 1;
+    z-index: 9999;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgb(0,0,0); /* Fallback color */
-    background-color: rgba(0,0,0,0.4); /* Black with transparency */
-    padding-top: 60px;
+    background-color: rgba(0, 0, 0, 0.6); /* Qoraygan fon */
 }
 
+/* Modal kontenti */
 .modal-content {
-    background-color: #fefefe;
-    margin: 5% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 70%; /* Enini 70% ga o'zgartirildi */
-    height: 70%; /* Bo'yini 70% ga o'zgartirildi */
-    overflow-y: auto; /* Agar xabar uzun bo'lsa, o'qi bo'lishi uchun skroll bar qo'yiladi */
+    background-color: #141c2c;
+    margin: 10% auto;
+    padding: 30px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    position: relative;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Label uchun stil */
+.modal-content label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+    color: #cccccc;
+}
+
+/* Inputlar uchun stil */
+.modal-content input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    background-color: #1f2a3c;
+    color: white;
+    border: 1px solid #333;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+/* Textarea */
+#modal-text {
+    background-color: #1f2a3c;
+    color: white;
+    border: 1px solid #333;
+    border-radius: 8px;
+    margin-top: 20px;
+    padding: 10px;
+    resize: none;
+}
+
+/* Yuborish tugmasi */
+.modal-content button[type="submit"] {
+    margin-top: 20px;
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.modal-content button[type="submit"]:hover {
+    background-color: #0056b3;
+}
+
+/* Yopish tugmasi */
+.close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    color: #bbb;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.close:hover {
+    color: white;
 }
 
 /* Media queries uchun o'zgartirishlar */

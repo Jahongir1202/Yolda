@@ -3,14 +3,13 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-
+from .services import send_to_10_groups_sync
 from .models import User, MessageUser, TelegramAccount, Message, ArxivMessage
 import json
 from .tasks import delete_message
 from datetime import timedelta
 
 
-# views.py
 @csrf_exempt
 def show_last_message(request):
     if request.method == 'POST':
@@ -20,8 +19,6 @@ def show_last_message(request):
         text = request.POST.get('text')
         narxi = request.POST.get('narxi')
 
-        print("POST ma'lumotlari:", qayerda, qayerga, cars, text, narxi)
-
         if all([qayerda, qayerga, cars, text, narxi]):
             arxiv = ArxivMessage.objects.create(
                 qayerda=qayerda,
@@ -30,80 +27,64 @@ def show_last_message(request):
                 text=text,
                 narxi=narxi
             )
-            print("✅ Yangi ma'lumot saqlandi")
 
-            # ⬇️ Telegramga yuborish
             message = (
-                f"Qayerda: {arxiv.qayerda}\n"
-                f"Qayerga: {arxiv.qayerga}\n"
-                f"Avtomobil: {arxiv.cars}\n"
-                f"Matn: {arxiv.text}\n"
-                f"Narxi: {arxiv.narxi}"
+                f"Qayerda: {qayerda}\n"
+                f"Qayerga: {qayerga}\n"
+                f"Avtomobil: {cars}\n"
+                f"Matn: {text}\n"
+                f"Narxi: {narxi}"
             )
-            accounts = TelegramAccount.objects.filter(is_default=True)
-            for account in accounts:
-                account.send_message_to_groups(message)
-            print("🎉 Barcha guruhlarga yuborildi.")
-        else:
-            print("❌ To‘liq emas, saqlanmadi")
 
-        return redirect('show_last_message')   # yoki kerakli sahifaga qaytish
+            for account in TelegramAccount.objects.filter(is_default=True):
+                try:
+                    account.send_message_to_groups(message)
+                except Exception as e:
+                    print(f"⚠️ Yuborishda xatolik: {account.session_name} - {e}")
 
-    # GET holati
+        return redirect('show_last_message')
+
     user_id = request.session.get('user_id')
     if not user_id:
         return redirect('login')
 
-    all_messages = MessageUser.objects.all().order_by('-created_at')
-    visible_messages = [
-        msg for msg in all_messages
-        if msg.taken_by is None or msg.taken_by.id == user_id
-    ]
+    messages = MessageUser.objects.filter(
+        taken_by__isnull=True
+    ) | MessageUser.objects.filter(taken_by__id=user_id)
 
     return render(request, 'list.html', {
-        'messages': visible_messages,
+        'messages': messages.order_by('-created_at'),
         'user_id': user_id
     })
 
+
 @csrf_exempt
 def send_to_groups(request, msg_id):
-    print("📥 [send_to_groups] So‘rov keldi. Method:", request.method)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST so‘rov kerak'}, status=405)
 
-    if request.method == 'POST':
-        try:
-            print(f"🔍 ArxivMessage obyektini topishga urinyapti. msg_id: {msg_id}")
-            arxiv_msg = ArxivMessage.objects.get(id=msg_id)
-            print(f"✅ ArxivMessage topildi: {arxiv_msg}")
+    try:
+        arxiv_msg = ArxivMessage.objects.get(id=msg_id)
+        message = (
+            f"Qayerda: {arxiv_msg.qayerda}\n"
+            f"Qayerga: {arxiv_msg.qayerga}\n"
+            f"Avtomobil: {arxiv_msg.cars}\n"
+            f"Matn: {arxiv_msg.text}\n"
+            f"Narxi: {arxiv_msg.narxi}"
+        )
 
-            message = (
-                f"Qayerda: {arxiv_msg.qayerda}\n"
-                f"Qayerga: {arxiv_msg.qayerga}\n"
-                f"Avtomobil: {arxiv_msg.cars}\n"
-                f"Matn: {arxiv_msg.text}\n"
-                f"Narxi: {arxiv_msg.narxi}"
-            )
-            print(f"📤 Yuboriladigan xabar tayyorlandi:\n{message}")
+        for account in TelegramAccount.objects.filter(is_default=True):
+            last_index = account.last_group_index or 0
+            new_index = send_to_10_groups_sync(account.session_name, message, last_index)
+            account.last_group_index = new_index
+            account.save()
 
-            accounts = TelegramAccount.objects.filter(is_default=True)
-            print(f"🔗 Default Telegram accountlar soni: {accounts.count()}")
+        return JsonResponse({'success': True, 'msg_id': msg_id})
 
-            for i, account in enumerate(accounts, start=1):
-                print(f"➡️ [{i}] Guruhlarga yuborilyapti: account_id={account.id}")
-                account.send_message_to_groups(message)
-                print(f"✅ [{i}] Yuborildi")
-
-            print("🎉 Barcha guruhlarga yuborildi.")
-            return JsonResponse({'success': True, 'msg_id': msg_id})
-
-        except ArxivMessage.DoesNotExist:
-            print(f"❌ ArxivMessage topilmadi. msg_id: {msg_id}")
-            return JsonResponse({'success': False, 'error': 'ArxivMessage topilmadi'}, status=404)
-        except Exception as e:
-            print(f"🔥 Xatolik yuz berdi: {str(e)}")
-            return JsonResponse({'success': False, 'error': str(e)}, status=400)
-    else:
-        print("❌ Notog‘ri so‘rov turi. Faqat POST ruxsat etilgan.")
-        return JsonResponse({'success': False, 'error': 'POST so‘rov bo‘lishi kerak'}, status=405)
+    except ArxivMessage.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Xabar topilmadi'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 def my_messages_view(request):
     user_id = request.session.get('user_id')
