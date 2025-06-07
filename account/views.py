@@ -104,18 +104,45 @@ def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
+
         try:
             user = User.objects.get(username=username, password=password)
+
+            # ❌ Agar token allaqachon mavjud bo‘lsa, boshqa qurilmadan login qilishga ruxsat berilmaydi
+            if user.session_token:
+                messages.error(request, "Bu hisob boshqa qurilmada allaqachon tizimga kirgan!")
+                return render(request, 'login.html')
+
+            # ✅ Yangi token yaratamiz (oddiy misol: user ID + IP address)
+            import uuid
+            token = str(uuid.uuid4())
+            user.session_token = token
+            user.save()
+
+            # 🔐 Tokenni session'ga yozib qo‘yamiz
             request.session['user_id'] = user.id
+            request.session['session_token'] = token
+
             return redirect('show_last_message')
+
         except User.DoesNotExist:
-            messages.error(request, "Foydalanuvchi yoki parol noto'g'ri!")
+            messages.error(request, "Foydalanuvchi yoki parol noto‘g‘ri!")
+
     return render(request, 'login.html')
 
-def logout_view(request):
-    request.session.flush()
-    return redirect("login")
 
+def logout_view(request):
+    user_id = request.session.get('user_id')
+    if user_id:
+        try:
+            user = User.objects.get(id=user_id)
+            user.session_token = None  # ⛔ Tokenni tozalaymiz
+            user.save()
+        except User.DoesNotExist:
+            pass
+
+    request.session.flush()  # 🔐 Sessionni tozalaymiz
+    return redirect('login')
 
 @csrf_exempt
 def edit_message(request, msg_id):
