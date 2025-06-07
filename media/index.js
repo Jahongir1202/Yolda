@@ -160,6 +160,49 @@ function sendMessageToGroupsModal() {
     .catch(err => {
         console.error("Fetch xatolik:", err);
     });
+    const button = document.getElementById("sendButton");
+
+    // Avvalgi yuborilgan vaqtni localStorage dan olish
+    const lastSent = localStorage.getItem('lastSentTime');
+    const now = new Date().getTime();
+
+    if (lastSent && now - lastSent < 2 * 60 * 1000) {
+      // Agar 2 daqiqa o'tmagan bo‘lsa, ogohlantirish chiqarish
+      const secondsLeft = Math.ceil((2 * 60 * 1000 - (now - lastSent)) / 1000);
+      alert(`${secondsLeft} soniyadan keyin qayta yuborishingiz mumkin.`);
+      return;
+    }
+
+    // Tugmani bloklash va matnni o'zgartirish
+    button.disabled = true;
+    button.innerText = "Yuborildi... (2 daqiqa kuting)";
+
+    // Yuborish vaqtini saqlab qo'yish
+    localStorage.setItem('lastSentTime', now.toString());
+
+    // Asl yuborish funksiyangiz shu yerda bo'ladi (API so‘rov yoki boshqa narsa)
+
+    // 2 daqiqa o‘tgach tugmani qayta yoqish
+    setTimeout(() => {
+      button.disabled = false;
+      button.innerText = "Yuborish";
+    }, 2 * 60 * 1000);
+  }
+
+  // Sahifa yuklanganda, agar 2 daqiqa o‘tmagan bo‘lsa tugmani bloklash
+  window.onload = function () {
+    const button = document.getElementById("sendButton");
+    const lastSent = localStorage.getItem('lastSentTime');
+    const now = new Date().getTime();
+
+    if (lastSent && now - lastSent < 2 * 60 * 1000) {
+      button.disabled = true;
+      button.innerText = "Yuborildi... (2 daqiqa kuting)";
+      setTimeout(() => {
+        button.disabled = false;
+        button.innerText = "Yuborish";
+      }, 2 * 60 * 1000 - (now - lastSent));
+    }
 }
 
 // Modalda tahrirlash
