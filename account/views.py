@@ -9,9 +9,13 @@ import json
 from .tasks import delete_message
 from datetime import timedelta
 
+import logging
+
+logger = logging.getLogger('views')
 
 @csrf_exempt
 def show_last_message(request):
+    logger.info("calling show_last_message()")
     if request.method == 'POST':
         qayerda = request.POST.get('qayerda')
         qayerga = request.POST.get('qayerga')
@@ -36,13 +40,8 @@ def show_last_message(request):
                 f"Narxi: {narxi}"
             )
 
-            for account in TelegramAccount.objects.filter(is_default=True):
-                try:
-                    account.send_message_to_groups(message)
-                except Exception as e:
-                    print(f"⚠️ Yuborishda xatolik: {account.session_name} - {e}")
 
-        return redirect('show_last_message')
+        return send_to_groups(request, msg_id=arxiv.id)
 
     user_id = request.session.get('user_id')
     if not user_id:
@@ -60,6 +59,10 @@ def show_last_message(request):
 
 @csrf_exempt
 def send_to_groups(request, msg_id):
+    logger.info("calling send_to_groups()")
+    if request.method == 'GET':
+        return JsonResponse({'success': False, 'error': 'POST so‘rov kerak'}, status=405)
+
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'POST so‘rov kerak'}, status=405)
 
@@ -73,11 +76,14 @@ def send_to_groups(request, msg_id):
             f"Narxi: {arxiv_msg.narxi}"
         )
 
+        logger.info(f"for loop start %s", message)
         for account in TelegramAccount.objects.filter(is_default=True):
+            print(f"📨 Yuborish boshlandi: {account.session_name}")
             last_index = account.last_group_index or 0
             new_index = send_to_10_groups_sync(account.session_name, message, last_index)
             account.last_group_index = new_index
             account.save()
+            print(f"📥 Yuborish tugadi: {account.session_name}, Yangi index: {new_index}")
 
         return JsonResponse({'success': True, 'msg_id': msg_id})
 
@@ -85,6 +91,7 @@ def send_to_groups(request, msg_id):
         return JsonResponse({'success': False, 'error': 'Xabar topilmadi'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
 
 def my_messages_view(request):
     user_id = request.session.get('user_id')

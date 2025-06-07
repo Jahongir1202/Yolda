@@ -219,4 +219,15 @@ function deleteMessageModal() {
     });
 }
 
+fetch('send_to_groups/<int:msg_id>/', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': csrftoken // agar CSRF himoyasi ishlatilsa
+    },
+    body: '' // kerak bo‘lsa ma’lumot yuborish mumkin
+})
+.then(response => response.json())
+.then(data => console.log(data))
+.catch(error => console.error('Error:', error));
 

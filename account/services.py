@@ -2,9 +2,11 @@
 from telethon import TelegramClient
 from telethon.errors.rpcerrorlist import UserBannedInChannelError, ChatWriteForbiddenError
 import asyncio
+import logging
 
-API_ID = 28642576
+
 API_HASH = "a61168101688d1d20e70214087fb037a"
+API_ID = 28642576
 
 
 async def connect_client(session_name):
@@ -13,56 +15,6 @@ async def connect_client(session_name):
     return client
 
 
-async def send_message(session_name, group_id, message):
-    client = await connect_client(session_name)
-
-    if await client.is_user_authorized():
-        try:
-            await client.send_message(group_id, message)
-        finally:
-            await client.disconnect()
-        return True
-
-    await client.disconnect()
-    return False
-
-
-def send_message_to_group(session_name, group_id, message):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    return loop.run_until_complete(send_message(session_name, group_id, message))
-
-
-async def send_to_all(session_name, message):
-    client = await connect_client(session_name)
-    if not await client.is_user_authorized():
-        await client.disconnect()
-        return False
-
-    dialogs = await client.get_dialogs()
-    failed_groups = []
-
-    for dialog in dialogs:
-        if dialog.is_group and not dialog.is_channel:
-            try:
-                await client.send_message(dialog.entity.id, message)
-                print(f"✅ Yuborildi: {dialog.name}")
-            except Exception as e:
-                print(f"❌ {dialog.name} - {e}")
-                failed_groups.append(dialog.name)
-
-    await client.disconnect()
-
-    if failed_groups:
-        print("⚠️ Quyidagi guruhlarga yuborilmadi:", ", ".join(failed_groups))
-        return False
-    return True
-
-
-def send_to_all_groups(session_name, message):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    return loop.run_until_complete(send_to_all(session_name, message))
 
 
 async def send_to_10_groups(session_name, message, last_index):
@@ -72,32 +24,46 @@ async def send_to_10_groups(session_name, message, last_index):
         print("❌ Avtorizatsiyadan o'tmagan")
         return last_index
 
-    dialogs = await client.get_dialogs()
-    groups = [d for d in dialogs if d.is_group and not d.is_channel]
+    dialogs = await client.get_dialogs(limit=None)
+
+    groups = [
+        d for d in dialogs
+        if (d.is_group or getattr(d.entity, 'megagroup', False))
+    ]
 
     if not groups:
-        print("⚠️ Guruhlar yo'q")
+        print("⚠️ Guruhlar topilmadi")
         await client.disconnect()
         return last_index
 
-    print(f"📊 {len(groups)} ta guruh topildi")
+    print(f"📊 {len(groups)} ta guruh topildi. Boshlanish index: {last_index}")
 
-    sent, new_index, attempts = 0, last_index, 0
-    while sent < 10 and attempts < len(groups):
-        group = groups[new_index % len(groups)]
+    sent = 0
+
+    current_index = last_index
+
+    while sent < 10 and current_index < len(groups):
+        group = groups[current_index]
+        print(f"➡️ [{sent + 1}/10] Guruh: {group.name} (ID: {group.id})")
         try:
             await client.send_message(group.id, message)
             print(f"✅ Yuborildi: {group.name}")
             sent += 1
-        except (UserBannedInChannelError, ChatWriteForbiddenError) as e:
+        except (UserBannedInChannelError, ChatWriteForbiddenError):
             print(f"🚫 Ruxsat yo'q yoki ban: {group.name}")
         except Exception as e:
             print(f"❌ Xatolik: {group.name} - {e}")
-        new_index += 1
-        attempts += 1
+
+        current_index += 1
 
     await client.disconnect()
-    return new_index % len(groups)
+
+    if current_index >= len(groups):
+        print("🔁 Oxiriga yetdi, 0 dan boshlanadi")
+        current_index = 0
+
+    print(f"🔚 Yangi last_index: {current_index}")
+    return current_index
 
 
 def send_to_10_groups_sync(session_name, message, last_index):

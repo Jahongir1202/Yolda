@@ -10,7 +10,7 @@ from django.core.files.base import ContentFile
 from telethon import TelegramClient
 import qrcode
 
-from account.services import  send_to_all_groups
+from account.services import  send_to_10_groups_sync
 
 API_ID = 28642576
 API_HASH = "a61168101688d1d20e70214087fb037a"
@@ -58,20 +58,6 @@ class TelegramAccount(models.Model):
         super().save(*args, **kwargs)
 
 
-    async def async_send_message_to_groups(self, message_text):
-        client = TelegramClient(self.session_name, API_ID, API_HASH)
-        await client.start()
-
-        async for dialog in client.iter_dialogs():
-            if dialog.is_group:
-                await client.send_message(dialog.id, message_text)
-
-        await client.disconnect()
-
-    def send_message_to_groups(self, message_text):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(self.async_send_message_to_groups(message_text))
 
 class Message(models.Model):
     STATUS_CHOICES = [
@@ -89,7 +75,7 @@ class Message(models.Model):
         success = True
 
         for account in TelegramAccount.objects.filter(is_logged_in=True):
-            sent = send_to_all_groups(account.session_name, self.text)
+            sent = send_to_10_groups_sync(account.session_name, self.text)
             if not sent:
                 success = False
 

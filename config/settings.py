@@ -163,6 +163,26 @@ AUTHENTICATION_BACKENDS = [
 CSRF_TRUSTED_ORIGINS = [
     "https://*.ngrok-free.app"
 ]
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+}
 
 
+#daphne -b 0.0.0.0 -p 8000 config.asgi:application
+#python manage.py listen_telegram
+#celery -A config worker --loglevel=info
+
+# tmux attach -t daphne
+# tmux attach -t telegram
+# tmux attach -t celery
 
