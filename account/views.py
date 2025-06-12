@@ -66,9 +66,15 @@ def send_to_groups(request, msg_id):
 
         base_message = (
             f"Yo'nalish: {arxiv_msg.qayerda} ----> {arxiv_msg.qayerga}\n"
+            f"\n"
             f"Avtomobil: {arxiv_msg.cars}\n"
+            f"\n"
             f"Matn: {arxiv_msg.text}\n"
+            f"\n"
             f"Narxi: {arxiv_msg.narxi}\n"
+            f"\n"
+            f"\n"
+            f"\n"
             f"---------------- https://Yoldauz.uz --------------\n"
         )
 
