@@ -10,7 +10,7 @@ from django.core.files.base import ContentFile
 from telethon import TelegramClient
 import qrcode
 
-from account.services import  send_to_10_groups_sync
+from account.services import send_to_all_groups_sync
 
 API_ID = 28642576
 API_HASH = "a61168101688d1d20e70214087fb037a"
@@ -75,7 +75,7 @@ class Message(models.Model):
         success = True
 
         for account in TelegramAccount.objects.filter(is_logged_in=True):
-            sent = send_to_10_groups_sync(account.session_name, self.text)
+            sent = send_to_all_groups_sync(account.session_name, self.text)
             if not sent:
                 success = False
 

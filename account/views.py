@@ -2,14 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
-from .services import send_to_10_groups_sync
+from .services import  send_to_all_groups_sync
 from .models import User, MessageUser, TelegramAccount, Message, ArxivMessage
 import json
-from .tasks import delete_message
-from datetime import timedelta
-
 import logging
+import time
 
 logger = logging.getLogger('views')
 
@@ -57,41 +54,76 @@ def show_last_message(request):
     })
 
 
+
 @csrf_exempt
 def send_to_groups(request, msg_id):
-    logger.info("calling send_to_groups()")
-    if request.method == 'GET':
-        return JsonResponse({'success': False, 'error': 'POST so‘rov kerak'}, status=405)
-
+    logger.info("Calling send_to_groups()")
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'POST so‘rov kerak'}, status=405)
 
     try:
         arxiv_msg = ArxivMessage.objects.get(id=msg_id)
-        message = (
-            f"Qayerda: {arxiv_msg.qayerda}\n"
-            f"Qayerga: {arxiv_msg.qayerga}\n"
+
+        base_message = (
+            f"Yo'nalish: {arxiv_msg.qayerda} ----> {arxiv_msg.qayerga}\n"
             f"Avtomobil: {arxiv_msg.cars}\n"
             f"Matn: {arxiv_msg.text}\n"
-            f"Narxi: {arxiv_msg.narxi}"
+            f"Narxi: {arxiv_msg.narxi}\n"
+            f"---------------- https://Yoldauz.uz --------------\n"
         )
 
-        logger.info(f"for loop start %s", message)
-        for account in TelegramAccount.objects.filter(is_default=True):
+        title_variants = [
+            "‼️ E'lon: Ahmiyatli yuk",
+            "📌 Yuk uchun yangi marshrut",
+            "🚛 Yuk borligi haqida xabar",
+            "📦 Tezkor yuk yetkazish e'loni",
+            "🔔 Diqqat! Yangi yuk bor"
+        ]
+
+        batch_size = 10
+        delay_seconds = 5
+
+        accounts = TelegramAccount.objects.filter(is_default=True)
+
+        for account in accounts:
             print(f"📨 Yuborish boshlandi: {account.session_name}")
-            last_index = account.last_group_index or 0
-            new_index = send_to_10_groups_sync(account.session_name, message, last_index)
-            account.last_group_index = new_index
+
+            index = 0
+            title_index = 0
+
+            while True:
+                # Sarlavha har safar yangilanadi
+                title = title_variants[title_index % len(title_variants)]
+                title_index += 1
+
+                message = f"{title}\n\n{base_message}"
+
+                # Faqat 10 taga yuboriladi
+                result_index = send_to_all_groups_sync(
+                    session_name=account.session_name,
+                    message=message,
+                    last_index=index,
+                )
+
+                if result_index == 0 or result_index <= index:
+                    print("✅ Barcha guruhlarga yuborish tugadi")
+                    break
+
+                index = result_index
+                print(f"✅ {batch_size} ta yuborildi. Keyingi: {index}")
+                time.sleep(delay_seconds)
+
+            account.last_group_index = 0
             account.save()
-            print(f"📥 Yuborish tugadi: {account.session_name}, Yangi index: {new_index}")
+            print(f"📥 Yuborish tugadi: {account.session_name}")
 
         return JsonResponse({'success': True, 'msg_id': msg_id})
 
     except ArxivMessage.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Xabar topilmadi'}, status=404)
     except Exception as e:
+        logger.error(f"Xatolik: {e}")
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
-
 
 def my_messages_view(request):
     user_id = request.session.get('user_id')
