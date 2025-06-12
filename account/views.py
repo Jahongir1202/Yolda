@@ -75,7 +75,7 @@ def send_to_groups(request, msg_id):
             f"\n"
             f"\n"
             f"\n"
-            f"---------------- https://Yoldauz.uz --------------\n"
+            f"----------------Yoldauz.uz --------------\n"
         )
 
         title_variants = [
