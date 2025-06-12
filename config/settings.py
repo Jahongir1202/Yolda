@@ -174,4 +174,4 @@ LOGGING = {
 # tmux attach -t daphne
 # tmux attach -t telegram
 # tmux attach -t celery
-
+# Crtl+Shift+b d
