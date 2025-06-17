@@ -59,7 +59,7 @@
             {% if success %}
                 <p style="color: green;">✅ Ma'lumot muvaffaqiyatli yuborildi!</p>
             {% endif %}
-            <form method="POST" action="{% url 'show_last_message'%}">
+            <form method="POST" action="{% url 'show_last_message' %}" onsubmit="return showLoading();">
                 {% csrf_token %}
                 <label for="qayerda">Qayerda:</label>
                 <input type="text" name="qayerda" id="qayerda" required><br>
@@ -85,5 +85,12 @@
             <button id="editMessageModal" class="btn edit-btn" onclick="editMessageModal()">✏️ Tahrirlash</button>
         </div>
     </div>
+    <div id="loading-spinner" style="display:none; text-align:center;">
+        <img src="/static/loading.gif" width="50" alt="Yuborilyapti...">
+        <p>⏳ Yuborilyapti, iltimos kuting...</p>
+    </div>
+
+
+
 </body>
 </html>

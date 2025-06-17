@@ -26,7 +26,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'account',
     'telethon',
-    'channels'
+    'channels',
+    'django_extensions',
 ]
 
 MIDDLEWARE = [

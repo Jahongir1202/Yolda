@@ -120,74 +120,98 @@ function closeMessageModal() {
     const modal = document.getElementById("message-modal");
     modal.style.display = "none";
 }
-
-// Modalda yuborish
 function sendMessageToGroupsModal() {
     const modal = document.getElementById("message-modal");
-    const messageId = modal.dataset.messageId;
-    const messageText = document.getElementById("modal-text").value;
 
-    console.log("Yuborilayotgan xabar (modal):", messageText);
+    const qayerda = document.getElementById("input-qayerda").value;
+    const qayerga = document.getElementById("input-qayerga").value;
+    const cars = document.getElementById("input-cars").value;
+    const text = document.getElementById("modal-text").value;
+    const narxi = document.getElementById("input-narxi").value;
 
-    if (!messageText || !messageText.trim()) {
-        console.error("Xabar bo'sh!");
+    const spinner = document.getElementById("loading-spinner");
+    const button = document.getElementById("sendButton");
+
+    if (!qayerda || !qayerga || !cars || !text || !narxi) {
+        alert("Barcha maydonlarni to‘ldiring!");
         return;
     }
 
-    fetch(`/send_to_groups/${messageId}/`, {
+    const lastSent = localStorage.getItem('lastSentTime');
+    const now = new Date().getTime();
+
+    if (lastSent && now - lastSent < 2 * 60 * 1000) {
+        const secondsLeft = Math.ceil((2 * 60 * 1000 - (now - lastSent)) / 1000);
+        alert(`${secondsLeft} soniyadan keyin yuborishingiz mumkin.`);
+        return;
+    }
+
+    // Spinnerni ko‘rsatamiz
+    spinner.style.display = "block";
+    button.disabled = true;
+    button.innerText = "Yuborilmoqda...";
+
+    // Avval xabarni saqlash
+    fetch('/messages/', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded',
             'X-CSRFToken': csrftoken,
         },
-        body: JSON.stringify({
-            message: messageText
+        body: new URLSearchParams({
+            qayerda: qayerda,
+            qayerga: qayerga,
+            cars: cars,
+            text: text,
+            narxi: narxi
         })
     })
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            alert("Xabar jo'natildi:", data);
-            socket.send(JSON.stringify({
-                type: 'message',
-                id: data.id,
-                message: data.message
-            }));
+            const msg_id = data.msg_id;
+
+            // Endi guruhlarga yuborish
+            return fetch(`/send_to_groups/${msg_id}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({
+                    message: text
+                })
+            });
         } else {
-            console.error("Serverdan xatolik:", data.error);
+            throw new Error(data.error || "Xabarni saqlab bo‘lmadi");
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert("✅ Xabar muvaffaqiyatli jo‘natildi!");
+            localStorage.setItem('lastSentTime', now.toString());
+        } else {
+            console.error("Xatolik:", data.error);
+            alert("❌ Jo‘natishda xatolik: " + data.error);
         }
     })
     .catch(err => {
-        console.error("Fetch xatolik:", err);
+        console.error("Xatolik:", err);
+        alert("❌ Xatolik: " + err.message);
+    })
+    .finally(() => {
+        // Spinnerni yashiramiz
+        spinner.style.display = "none";
+        button.disabled = true;
+        button.innerText = "Yuborildi... (2 daqiqa kuting)";
+
+        setTimeout(() => {
+            button.disabled = false;
+            button.innerText = "Yuborish";
+        }, 2 * 60 * 1000);
     });
-    const button = document.getElementById("sendButton");
-
-    // Avvalgi yuborilgan vaqtni localStorage dan olish
-    const lastSent = localStorage.getItem('lastSentTime');
-    const now = new Date().getTime();
-
-    if (lastSent && now - lastSent < 2 * 60 * 1000) {
-      // Agar 2 daqiqa o'tmagan bo‘lsa, ogohlantirish chiqarish
-      const secondsLeft = Math.ceil((2 * 60 * 1000 - (now - lastSent)) / 1000);
-      alert(`${secondsLeft} soniyadan keyin qayta yuborishingiz mumkin.`);
-      return;
-    }
-
-    // Tugmani bloklash va matnni o'zgartirish
-    button.disabled = true;
-    button.innerText = "Yuborildi... (2 daqiqa kuting)";
-
-    // Yuborish vaqtini saqlab qo'yish
-    localStorage.setItem('lastSentTime', now.toString());
-
-    // Asl yuborish funksiyangiz shu yerda bo'ladi (API so‘rov yoki boshqa narsa)
-
-    // 2 daqiqa o‘tgach tugmani qayta yoqish
-    setTimeout(() => {
-      button.disabled = false;
-      button.innerText = "Yuborish";
-    }, 2 * 60 * 1000);
-  }
+}
 
   // Sahifa yuklanganda, agar 2 daqiqa o‘tmagan bo‘lsa tugmani bloklash
   window.onload = function () {
@@ -274,3 +298,7 @@ fetch('send_to_groups/<int:msg_id>/', {
 .then(data => console.log(data))
 .catch(error => console.error('Error:', error));
 
+function showLoading() {
+    document.getElementById("loading-spinner").style.display = "block";
+    return true; // bu formani jo‘natishga ruxsat beradi
+}
