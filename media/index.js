@@ -1,4 +1,6 @@
 
+document.body.classList.add('loading'); // Spinner ochilganda
+document.body.classList.remove('loading'); // Spinner yopilganda
 document.getElementById('reloadPage').addEventListener('click', function() {
     location.reload();
 });
@@ -121,98 +123,112 @@ function closeMessageModal() {
     modal.style.display = "none";
 }
 function sendMessageToGroupsModal() {
-    const modal = document.getElementById("message-modal");
+    console.log(">>>>>>>>>>>>>>>>>>>animatsiya");
+
+    document.getElementById("page-spinner").style.display = "block";
+    console.log(document.getElementById("page-spinner"));  // null bo‘lsa, demak yo‘q!
 
     const qayerda = document.getElementById("input-qayerda").value;
     const qayerga = document.getElementById("input-qayerga").value;
     const cars = document.getElementById("input-cars").value;
     const text = document.getElementById("modal-text").value;
     const narxi = document.getElementById("input-narxi").value;
-
-    const spinner = document.getElementById("loading-spinner");
     const button = document.getElementById("sendButton");
 
     if (!qayerda || !qayerga || !cars || !text || !narxi) {
         alert("Barcha maydonlarni to‘ldiring!");
+        document.getElementById("page-spinner").style.display = "none";
+        console.log(">>>>>>>>111111111111111111>>>>>>>>>>>animatsiya");
         return;
     }
 
     const lastSent = localStorage.getItem('lastSentTime');
     const now = new Date().getTime();
-
     if (lastSent && now - lastSent < 2 * 60 * 1000) {
         const secondsLeft = Math.ceil((2 * 60 * 1000 - (now - lastSent)) / 1000);
         alert(`${secondsLeft} soniyadan keyin yuborishingiz mumkin.`);
+        document.getElementById("page-spinner").style.display = "none";
         return;
     }
 
-    // Spinnerni ko‘rsatamiz
-    spinner.style.display = "block";
     button.disabled = true;
     button.innerText = "Yuborilmoqda...";
 
-    // Avval xabarni saqlash
-    fetch('/messages/', {
+    return fetch(`/send_to_groups/${data.msg_id}/`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Type': 'application/json',
             'X-CSRFToken': csrftoken,
         },
-        body: new URLSearchParams({
-            qayerda: qayerda,
-            qayerga: qayerga,
-            cars: cars,
-            text: text,
-            narxi: narxi
-        })
+        body: JSON.stringify({ message: text })
+    })
+    .then(res => {
+        // JSON formatda qaytsa, statusni ham qaytaramiz
+        return res.json().then(body => {
+            return { status: res.status, body };
+        });
     })
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            const msg_id = data.msg_id;
-
-            // Endi guruhlarga yuborish
-            return fetch(`/send_to_groups/${msg_id}/`, {
+            return fetch(`/send_to_groups/${data.msg_id}/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': csrftoken,
                 },
-                body: JSON.stringify({
-                    message: text
-                })
-            });
+                body: JSON.stringify({ message: text })
+            })
+            .then(res => res.json().then(json => ({ status: res.status, body: json })));
         } else {
             throw new Error(data.error || "Xabarni saqlab bo‘lmadi");
         }
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
+    .then(({ status, body }) => {
+        if (status === 429) {
+            const seconds = parseInt(body.error.match(/\d+/)[0]);
+            alert(`⏱ ${seconds} soniyadan keyin qayta yuboring.`);
+
+            button.disabled = true;
+            button.innerText = `Kutib turing... (${seconds} s)`;
+
+            let counter = seconds;
+            const interval = setInterval(() => {
+                counter--;
+                button.innerText = `Kutib turing... (${counter} s)`;
+                if (counter <= 0) {
+                    clearInterval(interval);
+                    button.disabled = false;
+                    button.innerText = "Yuborish";
+                }
+            }, 1000);
+
+            throw new Error("Bloklangan vaqt ichida yuborishga urinish");
+        }
+
+        if (body.success) {
             alert("✅ Xabar muvaffaqiyatli jo‘natildi!");
             localStorage.setItem('lastSentTime', now.toString());
         } else {
-            console.error("Xatolik:", data.error);
-            alert("❌ Jo‘natishda xatolik: " + data.error);
+            throw new Error(body.error);
         }
     })
     .catch(err => {
-        console.error("Xatolik:", err);
-        alert("❌ Xatolik: " + err.message);
+        if (err.message !== "Bloklangan vaqt ichida yuborishga urinish") {
+            console.error(err);
+            alert("❌ Xatolik: " + err.message);
+        }
     })
     .finally(() => {
-        // Spinnerni yashiramiz
-        spinner.style.display = "none";
+        document.getElementById("page-spinner").style.display = "none";
         button.disabled = true;
         button.innerText = "Yuborildi... (2 daqiqa kuting)";
-
         setTimeout(() => {
             button.disabled = false;
             button.innerText = "Yuborish";
         }, 2 * 60 * 1000);
     });
 }
-
   // Sahifa yuklanganda, agar 2 daqiqa o‘tmagan bo‘lsa tugmani bloklash
   window.onload = function () {
     const button = document.getElementById("sendButton");

@@ -7,7 +7,9 @@ from .models import User, MessageUser, TelegramAccount, Message, ArxivMessage
 import json
 import logging
 import time
-
+from .models import MessageCooldown
+from django.utils import timezone
+from datetime import timedelta
 logger = logging.getLogger('views')
 
 @csrf_exempt
@@ -58,8 +60,12 @@ def show_last_message(request):
 @csrf_exempt
 def send_to_groups(request, msg_id):
     logger.info("Calling send_to_groups()")
+    cooldown, _ = MessageCooldown.objects.get_or_create(id=1)
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'POST so‘rov kerak'}, status=405)
+    if not cooldown.is_allowed():
+        remaining = 120 - int((timezone.now() - cooldown.last_sent_at).total_seconds())
+        return JsonResponse({'success': False, 'error': f'{remaining} soniyadan keyin yuboring.'}, status=429)
 
     try:
         arxiv_msg = ArxivMessage.objects.get(id=msg_id)
@@ -122,14 +128,20 @@ def send_to_groups(request, msg_id):
             account.last_group_index = 0
             account.save()
             print(f"📥 Yuborish tugadi: {account.session_name}")
-
-        return JsonResponse({'success': True, 'msg_id': msg_id})
+            cooldown.last_sent_at = timezone.now()
+            cooldown.save()
+        return redirect('show_last_message')
 
     except ArxivMessage.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Xabar topilmadi'}, status=404)
     except Exception as e:
         logger.error(f"Xatolik: {e}")
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    except Exception as e:
+        logger.error(f"Xatolik: {e}")
+        return JsonResponse({'success': True})
+
+
 
 def my_messages_view(request):
     user_id = request.session.get('user_id')

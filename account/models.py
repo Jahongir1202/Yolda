@@ -9,7 +9,7 @@ from django.db import models
 from django.core.files.base import ContentFile
 from telethon import TelegramClient
 import qrcode
-
+from django.utils import timezone
 from account.services import send_to_all_groups_sync
 
 API_ID = 28642576
@@ -122,3 +122,12 @@ class ArxivMessage(models.Model):
 
     def __str__(self):
         return self.cars
+
+
+class MessageCooldown(models.Model):
+    last_sent_at = models.DateTimeField(default=timezone.now)
+
+    def is_allowed(self):
+        now = timezone.now()
+        delta = now - self.last_sent_at
+        return delta.total_seconds() >= 120
