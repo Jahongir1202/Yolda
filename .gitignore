@@ -1,1 +1,4 @@
+.idea
 venv
+logs
+media/qrcodes
