@@ -9,6 +9,9 @@ import logging
 import time
 from .models import MessageCooldown
 from django.utils import timezone
+from django.core.cache import cache
+LOCK_KEY = 'telegram_send_lock'
+
 from datetime import timedelta
 logger = logging.getLogger('views')
 
@@ -63,9 +66,10 @@ def send_to_groups(request, msg_id):
     cooldown, _ = MessageCooldown.objects.get_or_create(id=1)
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'POST so‘rov kerak'}, status=405)
-    if not cooldown.is_allowed():
-        remaining = 120 - int((timezone.now() - cooldown.last_sent_at).total_seconds())
-        return JsonResponse({'success': False, 'error': f'{remaining} soniyadan keyin yuboring.'}, status=429)
+        # 🔐 LOCK: agar boshqa dispecher yuboryapti bo‘lsa, xatolik ko‘rsatamiz
+    if not cache.add(LOCK_KEY, True, timeout=60):  # 60 soniya lock
+        messages.error(request, "❌ Boshqa dispecher xabar yuboryapti. Iltimos kuting.")
+        return redirect('show_last_message')
 
     try:
         arxiv_msg = ArxivMessage.objects.get(id=msg_id)
@@ -141,7 +145,8 @@ def send_to_groups(request, msg_id):
         logger.error(f"Xatolik: {e}")
         return JsonResponse({'success': True})
 
-
+    finally:
+        cache.delete(LOCK_KEY)
 
 def my_messages_view(request):
     user_id = request.session.get('user_id')

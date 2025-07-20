@@ -214,6 +214,27 @@ fetch('send_to_groups/<int:msg_id>/', {
 .catch(error => console.error('Error:', error));
 
 function showLoading() {
-    document.getElementById("loading-spinner").style.display = "block";
-    return true; // bu formani jo‘natishga ruxsat beradi
-}
+        const button = document.getElementById("sendButton");
+        const spinner = document.getElementById("page-spinner");
+
+        // Tugma bloklanadi
+        button.disabled = true;
+
+        // Tugma matni o‘zgaradi
+        button.innerText = "⏳ Yuborilmoqda...";
+
+        // Spinner ko‘rinadi
+        spinner.style.display = "block";
+
+        return true; // form yuborilishi davom etadi
+    }
+
+    // Bu qism foydali: sahifa reload bo‘lsa, tugma holati tiklanadi
+    window.addEventListener("pageshow", function () {
+        const button = document.getElementById("sendButton");
+        const spinner = document.getElementById("page-spinner");
+
+        button.disabled = false;
+        button.innerText = "Yuborish";
+        spinner.style.display = "none";
+    });
