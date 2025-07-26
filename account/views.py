@@ -96,8 +96,8 @@ def send_to_groups(request, msg_id):
             "🔔 Diqqat! Yangi yuk bor"
         ]
 
-        batch_size = 10
-        delay_seconds = 5
+        batch_size = 20
+        delay_seconds = 3
 
         accounts = TelegramAccount.objects.filter(is_default=True)
 
