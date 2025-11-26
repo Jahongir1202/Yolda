@@ -51,3 +51,4 @@ channels
 channels_redis
 daphne
 gunicorn
+django-extensions
