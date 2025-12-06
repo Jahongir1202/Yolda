@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .services import  send_to_all_groups_sync
-from .models import User, MessageUser, TelegramAccount, Message, ArxivMessage
+from .models import User, MessageUser, TelegramAccount, Message, ArxivMessage,ApiMessage
 import json
 import logging
 import time
@@ -242,4 +242,25 @@ def take_message(request, id):
         except MessageUser.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Xabar topilmadi'})
     return JsonResponse({'success': False, 'error': 'Faqat POST so‘rovga ruxsat'})
+
+
+@csrf_exempt
+def api_receive_message(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST sorovi yuboring"}, status=400)
+
+    body = json.loads(request.body)
+    message = body.get("message")
+
+    if not message:
+        return JsonResponse({"error": "message berilmagan"}, status=400)
+
+    ApiMessage.objects.create(message=message)
+
+    return JsonResponse({"status": "ok"})
+
+
+def message_list(request):
+    messages = ApiMessage.objects.all().order_by("-created_at")
+    return render(request, "messages.html", {"messages": messages})
 

@@ -131,3 +131,10 @@ class MessageCooldown(models.Model):
         now = timezone.now()
         delta = now - self.last_sent_at
         return delta.total_seconds() >= 120
+
+class ApiMessage(models.Model):
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.message[:40]
