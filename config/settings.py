@@ -13,7 +13,11 @@ SECRET_KEY = 'django-insecure-0y9-v(h0c)k#3@%r(1vyay$h)#664a^v493w1$3hbe2@!^-@z$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    '127.0.0.1',
+    'localhost',
+    '4de8819f7de3.ngrok-free.app',
+]
 
 # Application definition
 
@@ -166,6 +170,13 @@ LOGGING = {
         'level': 'DEBUG',
     },
 }
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://4de8819f7de3.ngrok-free.app/'
+]
+
+TELEGRAM_BOT_TOKEN = "8539755966:AAGjbyV9-CiuQNLA5DHeggJ41TzN6-PcAus"
+TELEGRAM_CHANNEL_ID = "-1003460807944"
 
 
 #daphne -b 0.0.0.0 -p 8000 config.asgi:application

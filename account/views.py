@@ -10,6 +10,12 @@ import time
 from .models import MessageCooldown
 from django.utils import timezone
 from django.core.cache import cache
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import ApiMessage
+from .utils import send_telegram_message
+from .filters import is_uzbek_related
 LOCK_KEY = 'telegram_send_lock'
 
 from datetime import timedelta
@@ -257,10 +263,12 @@ def api_receive_message(request):
 
     ApiMessage.objects.create(message=message)
 
+    if is_uzbek_related(message):
+        send_telegram_message(message)
+
     return JsonResponse({"status": "ok"})
 
 
 def message_list(request):
     messages = ApiMessage.objects.all().order_by("-created_at")
     return render(request, "messages.html", {"messages": messages})
-
